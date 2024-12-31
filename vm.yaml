@@ -6,13 +6,6 @@ spec:
   running: true
   template:
     metadata:
-      annotations:
-        kubevirt.io/keep-assignment: "true"
-        io.cilium.network.ipam.mode: "static"
-        io.cilium.network.ipam.address: "10.0.0.100"
-        cni.cilium.io/ipAddrs: 10.0.0.100
-        ipam.cilium.io/ip-pool: "vm-static-pool"
-        cni.cilium.io/ipv4-pool: "10.0.2.100/30"
       labels:
         kubevirt.io/size: small
         kubevirt.io/domain: cirros
@@ -29,7 +22,6 @@ spec:
           interfaces:
           - name: default
             masquerade: {}
-            macAddress: de:ad:be:ef:00:01
         resources:
           requests:
             memory: 256M
