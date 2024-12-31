@@ -1,0 +1,157 @@
+################################################################################
+# 1) ClusterRole for the cloud-controller-manager
+################################################################################
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+  name: system:cloud-controller-manager
+rules:
+  # GCE-specific resources (adjust as needed):
+  - apiGroups: ["networking.gke.io"]
+    resources:
+    - network
+    verbs: ["get"]
+
+  - apiGroups: ["networking.gke.io"]
+    resources:
+    - network/status
+    - gkenetworkparamset
+    - gkenetworkparamset/status
+    verbs: ["update","get"]
+
+  # Allow create/patch/update events
+  - apiGroups: ["","events.k8s.io"]
+    resources:
+    - events
+    verbs: ["create","patch","update"]
+
+  # Leader election (leases)
+  - apiGroups: ["coordination.k8s.io"]
+    resources:
+    - leases
+    verbs: ["create"]
+
+  - apiGroups: ["coordination.k8s.io"]
+    resourceNames:
+    - cloud-controller-manager
+    resources:
+    - leases
+    verbs: ["get","update"]
+
+  # Endpoints, ServiceAccounts
+  - apiGroups: [""]
+    resources:
+    - endpoints
+    - serviceaccounts
+    verbs: ["create","get","update"]
+
+  # Nodes
+  - apiGroups: [""]
+    resources:
+    - nodes
+    verbs: ["get","update","patch"]
+
+  - apiGroups: [""]
+    resources:
+    - namespaces
+    verbs: ["get"]
+
+  - apiGroups: [""]
+    resources:
+    - nodes/status
+    verbs: ["patch","update"]
+
+  # Secrets
+  - apiGroups: [""]
+    resources:
+    - secrets
+    verbs: ["create","delete","get","update"]
+
+  # TokenReviews for authentication
+  - apiGroups: ["authentication.k8s.io"]
+    resources:
+    - tokenreviews
+    verbs: ["create"]
+
+  # List/Watch everything (common for external CCM)
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["list","watch"]
+
+  # ServiceAccount token creation
+  - apiGroups: [""]
+    resources:
+    - serviceaccounts/token
+    verbs: ["create"]
+
+  # ------------------ ADDED FIX: ConfigMaps permissions ------------------ #
+  - apiGroups: [""]
+    resources:
+    - configmaps
+    verbs: ["create","get","update","patch","delete"]
+  # ---------------------------------------------------------------------- #
+
+
+---
+################################################################################
+# 2) Role for leader-locking in kube-system (namespace-scoped)
+################################################################################
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+  name: system::leader-locking-cloud-controller-manager
+  namespace: kube-system
+rules:
+  # Leader election sometimes uses ConfigMaps in this namespace
+  - apiGroups: [""]
+    resources:
+    - configmaps
+    verbs: ["watch"]
+
+  - apiGroups: [""]
+    resources:
+    - configmaps
+    resourceNames:
+    - cloud-controller-manager
+    verbs: ["get","update"]
+
+
+---
+################################################################################
+# 3) ClusterRole for the cloud-node-controller
+################################################################################
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+  name: system:controller:cloud-node-controller
+rules:
+  - apiGroups: [""]
+    resources:
+    - events
+    verbs: ["create","patch","update"]
+
+  - apiGroups: [""]
+    resources:
+    - nodes
+    verbs: ["get","list","update","delete","patch"]
+
+  - apiGroups: [""]
+    resources:
+    - nodes/status
+    verbs: ["get","list","update","delete","patch"]
+
+  - apiGroups: [""]
+    resources:
+    - pods
+    verbs: ["list","delete"]
+
+  - apiGroups: [""]
+    resources:
+    - pods/status
+    verbs: ["list","delete"]

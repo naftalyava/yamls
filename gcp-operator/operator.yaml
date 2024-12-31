@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: cloud-controller-manager
+ namespace: kube-system
+ annotations:
+   scheduler.alpha.kubernetes.io/critical-pod: ""
+ labels:
+   tier: control-plane
+   component: cloud-controller-manager
+spec:
+ serviceAccountName: cloud-controller-manager
+ securityContext:
+   runAsUser: 1000
+   runAsGroup: 1000
+   supplementalGroups: [1000]
+   seccompProfile:
+     type: RuntimeDefault
+ priorityClassName: system-node-critical
+ hostNetwork: true
+ containers:
+   - name: cloud-controller-manager
+     image: registry.k8s.io/cloud-controller-manager:v1.9.9
+     resources:
+       requests:
+         cpu: 200m
+     env:
+       - name: GOOGLE_APPLICATION_CREDENTIALS
+         value: /etc/gcp/key.json
+     command: ["/usr/local/bin/cloud-controller-manager"]
+     args:
+       - "--cloud-provider=gce"
+       - "--cloud-config=/etc/srv/kubernetes/cloud-config/cloud-config"
+       - "--allocate-node-cidrs=true"
+       - "--configure-cloud-routes=true"
+       - "--cluster-cidr=10.0.0.0/8"
+       - "--v=2"
+       - "--logtostderr=true"
+         #livenessProbe:
+         #httpGet:
+         #host: 127.0.0.1
+         #port: 10258
+         #scheme: HTTPS
+         #path: /healthz
+         #initialDelaySeconds: 15
+         #timeoutSeconds: 15
+     volumeMounts:
+       - name: cloud-sa
+         mountPath: /etc/gcp
+         readOnly: true
+       - name: kubernetes-config
+         mountPath: /etc/srv/kubernetes
+       - name: cloud-config
+         mountPath: /etc/srv/kubernetes/cloud-config
+       - name: logfile
+         mountPath: /var/log/
+       - name: etcssl
+         mountPath: /etc/ssl
+         readOnly: true
+       - name: usrsharecacerts
+         mountPath: /usr/share/ca-certificates
+         readOnly: true
+       - name: varssl
+         mountPath: /var/ssl
+         readOnly: true
+       - name: etcopenssl
+         mountPath: /etc/openssl
+         readOnly: true
+       - name: etcpki
+         mountPath: /etc/pki
+         readOnly: true
+ volumes:
+   - name: cloud-sa
+     secret:
+       secretName: cloud-sa
+   - name: kubernetes-config
+     hostPath:
+       path: /etc/srv/kubernetes
+       type: DirectoryOrCreate
+   - name: cloud-config
+     configMap:
+       name: cloud-config
+   - name: logfile
+     hostPath:
+       path: /var/log
+       type: DirectoryOrCreate
+   - name: etcssl
+     hostPath:
+       path: /etc/ssl
+   - name: usrsharecacerts
+     hostPath:
+       path: /usr/share/ca-certificates
+   - name: varssl
+     hostPath:
+       path: /var/ssl
+   - name: etcopenssl
+     hostPath:
+       path: /etc/openssl
+   - name: etcpki
+     hostPath:
+       path: /etc/pki

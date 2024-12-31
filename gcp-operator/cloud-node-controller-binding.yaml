@@ -1,0 +1,171 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:cloud-controller-manager
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+rules:
+  # Example GCE-specific rules (modify as needed):
+  - apiGroups: ["networking.gke.io"]
+    resources: ["network"]
+    verbs: ["get"]
+  - apiGroups: ["networking.gke.io"]
+    resources: ["network/status", "gkenetworkparamset", "gkenetworkparamset/status"]
+    verbs: ["update", "get"]
+
+  # Added service management permissions
+  - apiGroups: [""]
+    resources: ["services", "services/status"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+
+  # Common controller manager rules
+  - apiGroups: ["", "events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
+
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["create"]
+
+  - apiGroups: ["coordination.k8s.io"]
+    resourceNames: ["cloud-controller-manager"]
+    resources: ["leases"]
+    verbs: ["get", "update"]
+
+  - apiGroups: [""]
+    resources: ["endpoints", "serviceaccounts"]
+    verbs: ["create", "get", "update"]
+
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "update", "patch"]
+
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get"]
+
+  - apiGroups: [""]
+    resources: ["nodes/status"]
+    verbs: ["patch", "update"]
+
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create", "delete", "get", "update"]
+
+  - apiGroups: ["authentication.k8s.io"]
+    resources: ["tokenreviews"]
+    verbs: ["create"]
+
+  # The wildcard rule is sometimes needed by external CCMs
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["list", "watch"]
+
+  - apiGroups: [""]
+    resources: ["serviceaccounts/token"]
+    verbs: ["create"]
+
+# Rest of the file remains unchanged
+---
+###############################################################################
+# 2. Role (namespace-scoped) for leader election in kube-system
+###############################################################################
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: system::leader-locking-cloud-controller-manager
+  namespace: kube-system
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+rules:
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["create", "get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["watch", "get", "update"]
+
+---
+###############################################################################
+# 3. RoleBinding for the leader-locking Role in kube-system
+###############################################################################
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: system::leader-locking-cloud-controller-manager
+  namespace: kube-system
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: system::leader-locking-cloud-controller-manager
+subjects:
+  - kind: ServiceAccount
+    name: cloud-controller-manager
+    namespace: kube-system
+
+---
+###############################################################################
+# 4. ClusterRoleBinding for the cloud-controller-manager ClusterRole
+###############################################################################
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:cloud-controller-manager
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:cloud-controller-manager
+subjects:
+  - kind: ServiceAccount
+    name: cloud-controller-manager
+    namespace: kube-system
+
+---
+###############################################################################
+# 5. ClusterRole for the cloud-node-controller
+###############################################################################
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: system:controller:cloud-node-controller
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+rules:
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "update", "delete", "patch"]
+  - apiGroups: [""]
+    resources: ["nodes/status"]
+    verbs: ["get", "list", "update", "delete", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["list", "delete"]
+  - apiGroups: [""]
+    resources: ["pods/status"]
+    verbs: ["list", "delete"]
+
+---
+###############################################################################
+# 6. ClusterRoleBinding for cloud-node-controller
+###############################################################################
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: system:controller:cloud-node-controller
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:controller:cloud-node-controller
+subjects:
+  - kind: ServiceAccount
+    name: cloud-node-controller
+    namespace: kube-system

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+ name: cloud-config
+ namespace: kube-system
+data:
+ cloud-config: |
+   [global]
+   project-id = "sdc-project-445322"
+   network-name = "default"
+   subnetwork-name = "host-network-subnet"
+   node-tags = "k8s-nodes"
+   region = "northamerica-south1"
+   multizone = true
+   api-rate-limit-qps-write = 20
+   api-rate-limit-qps-read = 30
+   api-rate-limit-bucket-write = 20
+   api-rate-limit-bucket-read = 30
