@@ -1,0 +1,11 @@
+apiVersion: kubevirt.io/v1
+kind: Kubevirt
+metadata:
+  name: kubevirt
+  namespace: kubevirt
+spec:
+  configuration:
+    migrations:
+      completionTimeoutPerGiB: 1200              # Time per GiB (20 minutes)
+      progressTimeout: 900                       # Progress timeout (5 minutes)
+      allowPostCopy: true                        # Enable post-copy migration

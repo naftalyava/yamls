@@ -1,0 +1,59 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: fedora-vm-1
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        kubevirt.io/size: small
+        kubevirt.io/domain: fedora-vm-1
+    spec:
+      domain:
+        features:
+          acpi: {}
+          apic: {}
+          smm: {}
+        cpu:
+          cores: 1
+          threads: 1
+          sockets: 1
+          maxSockets: 4
+        devices:
+          disks:
+            - name: containerdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+          - name: default
+            masquerade: {}
+            macAddress: de:ad:be:ef:00:01
+        resources:
+          requests:
+            memory: 2048M    # Increased memory for Fedora
+      networks:
+      - name: default
+        pod: {}
+      volumes:
+        - name: containerdisk
+          containerDisk:
+            image: quay.io/containerdisks/fedora:38
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              password: fedora
+              chpasswd: { expire: False }
+              ssh_pwauth: True
+              user: fedora
+              write_files:
+                - path: /etc/modprobe.d/acpi_hotplug.conf
+                  content: |
+                    options acpi_pad verbose=1
+              bootcmd:
+                - modprobe acpi_pad
+                - echo 1 > /sys/devices/system/cpu/hotplug/enabled

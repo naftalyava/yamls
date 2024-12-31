@@ -1,0 +1,49 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: cirros-vm
+spec:
+  running: true
+  template:
+    metadata:
+      annotations:
+        kubevirt.io/keep-assignment: "true"
+        io.cilium.network.ipam.mode: "static"
+        io.cilium.network.ipam.address: "10.0.0.100"
+        cni.cilium.io/ipAddrs: 10.0.0.100
+        ipam.cilium.io/ip-pool: "vm-static-pool"
+        cni.cilium.io/ipv4-pool: "10.0.2.100/30"
+      labels:
+        kubevirt.io/size: small
+        kubevirt.io/domain: cirros
+    spec:
+      domain:
+        devices:
+          disks:
+            - name: containerdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+          - name: default
+            bridge: {}
+        resources:
+          requests:
+            memory: 256M
+            cpu: 1
+      networks:
+      - name: default
+        pod: {}
+      volumes:
+        - name: containerdisk
+          containerDisk:
+            image: quay.io/kubevirt/cirros-container-disk-demo
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              password: gocubsgo
+              chpasswd: { expire: False }
+              ssh_pwauth: True

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cirros-vm-svc
+spec:
+  type: ClusterIP
+  ports:
+    - port: 1
+      targetPort: 1
+      name: icmp
+    - port: 22
+      targetPort: 22
+      name: ssh
+  selector:
+    kubevirt.io/domain: cirros

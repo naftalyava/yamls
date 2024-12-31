@@ -1,0 +1,54 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: deb-vm-10
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        kubevirt.io/size: large
+        kubevirt.io/domain: deb-vm-10
+    spec:
+      domain:
+        features:
+          acpi: {}
+          apic: {}
+          smm: {}
+        cpu:
+          cores: 4
+          threads: 1
+          sockets: 1
+          maxSockets: 1
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+          - name: default
+            masquerade: {}
+        resources:
+          requests:
+            memory: 12288M
+            cpu: 1
+          limits:
+            cpu: 4
+      networks:
+      - name: default
+        pod: {}
+      volumes:
+        - name: rootdisk
+          persistentVolumeClaim:
+            claimName: nfs-pvc
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            userData: |
+              #cloud-config
+              password: deb
+              chpasswd: { expire: False }
+              ssh_pwauth: True
+              user: deb

@@ -1,0 +1,9 @@
+apiVersion: cilium.io/v2alpha1
+kind: CiliumPodIPPool
+metadata:
+  name: vm-static-pool
+spec:
+  ipv4:
+    cidrs:
+      - 10.0.2.0/24
+    maskSize: 24

@@ -1,0 +1,6 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachineInstanceMigration
+metadata:
+  name: migration-job-10
+spec:
+  vmiName: deb-vm-10

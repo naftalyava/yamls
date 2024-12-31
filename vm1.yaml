@@ -1,0 +1,34 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: cirros-vm
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: cirros
+      annotations:
+        "kubernetes.io/ip-allocation": '{"interface":"eth0","ips":["10.0.0.100/24"]}'
+    spec:
+      domain:
+        devices:
+          disks:
+            - name: containerdisk
+              disk:
+                bus: virtio
+          interfaces:
+          - name: default
+            masquerade: {}
+        resources:
+          requests:
+            memory: 256M
+            cpu: 1
+      networks:
+      - name: default
+        pod: {}
+      hostNetwork: true
+      volumes:
+        - name: containerdisk
+          containerDisk:
+            image: quay.io/kubevirt/cirros-container-disk-demo

@@ -1,0 +1,15 @@
+containers:
+- name: gce-cloud-controller-manager
+  image: k8s.gcr.io/provider-gcp/cloud-controller-manager:latest
+  command:
+  - /bin/cloud-controller-manager
+  - --cloud-provider=gce
+  - --cloud-config=/etc/kubernetes/cloud-config
+  volumeMounts:
+  - name: cloud-config
+    mountPath: /etc/kubernetes/cloud-config
+volumes:
+- name: cloud-config
+  secret:
+    secretName: gce-cloud-config
+

@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloud-controller-manager
+  namespace: kube-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: gcp-cloud-controller-manager
+  namespace: kube-system
+  labels:
+    k8s-app: gcp-cloud-controller-manager
+spec:
+  selector:
+    matchLabels:
+      k8s-app: gcp-cloud-controller-manager
+  template:
+    metadata:
+      labels:
+        k8s-app: gcp-cloud-controller-manager
+    spec:
+      serviceAccountName: cloud-controller-manager
+      containers:
+      - name: gcp-cloud-controller-manager
+        image: gcr.io/k8s-staging-cloud-provider-gcp/cloud-controller-manager:latest
+        command:
+        - /usr/local/bin/cloud-controller-manager
+        - --cloud-provider=gce
+        - --leader-elect=true
+        - --use-service-account-credentials
+        - --allocate-node-cidrs=true
+        volumeMounts:
+        - name: cloud-config
+          mountPath: /etc/kubernetes/cloud-config
+          readOnly: true
+      volumes:
+      - name: cloud-config
+        secret:
+          secretName: cloud-controller-manager
+      tolerations:
+      - key: node.cloudprovider.kubernetes.io/uninitialized
+        value: "true"
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule

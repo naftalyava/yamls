@@ -1,0 +1,13 @@
+apiVersion: kubevirt.io/v1alpha1
+kind: MigrationPolicy
+metadata:
+  name: vm-migration-policy
+spec:
+  selectors:
+    virtualMachineInstanceSelector:
+      matchLabels:
+        kubevirt.io/domain: cirros
+  allowAutoConverge: true
+  bandwidthPerMigration: 64Mi
+  completionTimeoutPerGiB: 800
+  keepIPAddressOnMigration: true
